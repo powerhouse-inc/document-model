@@ -15,7 +15,12 @@ import {
     UNDO,
 } from './actions/types';
 import { z } from './schema';
-import { Action, Document, ImmutableStateReducer } from './types';
+import {
+    Action,
+    Document,
+    DocumentHeader,
+    ImmutableStateReducer,
+} from './types';
 import { isBaseAction, hashDocument } from './utils';
 
 /**
@@ -25,11 +30,11 @@ import { isBaseAction, hashDocument } from './utils';
  * @param action The action being applied to the document.
  * @returns The next revision number.
  */
-function getNextRevision(document: Document, action: Action): number {
+function getNextRevision(header: DocumentHeader, action: Action): number {
     // UNDO, REDO and PRUNE alter the revision themselves
     return [UNDO, REDO, PRUNE].includes(action.type)
-        ? document.revision
-        : document.revision + 1;
+        ? header.revision
+        : header.revision + 1;
 }
 
 /**
@@ -40,13 +45,10 @@ function getNextRevision(document: Document, action: Action): number {
  * @param action The action being applied to the document.
  * @returns The updated document state.
  */
-function updateHeader<T, A extends Action>(
-    document: Document<T, A>,
-    action: A | BaseAction,
-): Document<T, A> {
+function updateHeader(header: DocumentHeader, action: Action): DocumentHeader {
     return {
-        ...document,
-        revision: getNextRevision(document, action),
+        ...header,
+        revision: getNextRevision(header, action),
         lastModified: new Date().toISOString(),
     };
 }
@@ -58,50 +60,32 @@ function updateHeader<T, A extends Action>(
  * @param action The action being applied to the document.
  * @returns The updated document state.
  */
-function updateOperations<T, A extends Action>(
-    document: Document<T, A>,
-    action: A | BaseAction,
-): Document<T, A> {
+function updateOperations(
+    operations: Document['operations'],
+    action: Action,
+    revision: number,
+): Document['operations'] {
     // UNDO, REDO and PRUNE are meta operations
     // that alter the operations history themselves
     if ([UNDO, REDO, PRUNE, PRUNE].includes(action.type)) {
-        return document;
+        return operations;
     }
 
     // removes undone operations from history if there
     // is a new operation after an UNDO
-    const operations = document.operations.slice(0, document.revision);
+    const newOperations = operations.slice(0, revision);
 
     // adds the action to the operations history with
     // the latest index and current timestamp
-    return {
-        ...document,
-        operations: [
-            ...operations,
-            {
-                ...action,
-                index: operations.length,
-                timestamp: new Date().toISOString(),
-                hash: '',
-            },
-        ],
-    };
-}
-
-/**
- * Updates the document state based on the provided action.
- *
- * @param state The current state of the document.
- * @param action The action being applied to the document.
- * @returns The updated document state.
- */
-function updateDocument<T, A extends Action>(
-    document: Document<T, A>,
-    action: A | BaseAction,
-): Document<T, A> {
-    let newDocument = updateOperations(document, action);
-    newDocument = updateHeader(newDocument, action);
-    return newDocument;
+    return [
+        ...newOperations,
+        {
+            ...action,
+            index: newOperations.length,
+            timestamp: new Date().toISOString(),
+            hash: '',
+        },
+    ];
 }
 
 /**
@@ -112,11 +96,11 @@ function updateDocument<T, A extends Action>(
  * @param wrappedReducer The custom reducer function being wrapped by the base reducer.
  * @returns The updated document state.
  */
-function _baseReducer<T, A extends Action>(
-    document: Document<T, A>,
+function _baseReducer<T, A extends Action, M = unknown>(
+    document: Document<T, A, M>,
     action: BaseAction,
-    wrappedReducer: ImmutableStateReducer<T, A>,
-): Document<T, A> {
+    wrappedReducer: ImmutableStateReducer<T, A, M>,
+): Document<T, A, M> {
     // throws if action is not valid base action
     z.BaseActionSchema().parse(action);
 
@@ -153,10 +137,10 @@ function _baseReducer<T, A extends Action>(
  * specific to the document's state.
  * @returns The new state of the document.
  */
-export function baseReducer<T, A extends Action>(
-    document: Document<T, A>,
+export function baseReducer<T, A extends Action, M = unknown>(
+    document: Document<T, A, M>,
     action: A | BaseAction,
-    customReducer: ImmutableStateReducer<T, A>,
+    customReducer: ImmutableStateReducer<T, A, M>,
 ) {
     // if the action is one the base document actions (SET_NAME, UNDO, REDO, PRUNE)
     // then runs the base reducer first
@@ -167,7 +151,17 @@ export function baseReducer<T, A extends Action>(
 
     // updates the document revision number, last modified date
     // and operation history
-    newDocument = updateDocument<T, A>(newDocument, action);
+    const operations = updateOperations(
+        newDocument.operations,
+        action,
+        newDocument.revision,
+    );
+    const newHeader = updateHeader(newDocument, action);
+    newDocument = {
+        ...newDocument,
+        ...newHeader,
+        operations,
+    };
 
     // wraps the custom reducer with Immer to avoid
     // mutation bugs and allow writing reducers with
@@ -181,7 +175,7 @@ export function baseReducer<T, A extends Action>(
         // of mutating the draft then returns the new state
         if (returnedDraft) {
             // casts new state as draft to comply with typescript
-            return castDraft<Document<T, A>>({
+            return castDraft<Document<T, A, M>>({
                 ...newDocument,
                 state: returnedDraft,
             });

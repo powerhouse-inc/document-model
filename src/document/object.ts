@@ -15,16 +15,16 @@ import { loadFromFile, saveToFile, readOnly } from './utils';
  * @typeparam T - The type of data stored in the document.
  * @typeparam A - The type of action the document can take.
  */
-export abstract class BaseDocument<T, A extends Action> {
-    protected _document: Document<T, A>;
-    private _reducer: Reducer<T, A>;
+export abstract class BaseDocument<T, A extends Action, M = unknown> {
+    protected _document: Document<T, A, M>;
+    private _reducer: Reducer<T, A, M>;
 
     /**
      * Constructs a BaseDocument instance with an initial state.
      * @param reducer - The reducer function that updates the state.
      * @param document - The initial state of the document.
      */
-    constructor(reducer: Reducer<T, A>, document: Document<T, A>) {
+    constructor(reducer: Reducer<T, A, M>, document: Document<T, A, M>) {
         this._reducer = reducer;
         this._document = document;
     }
@@ -54,7 +54,7 @@ export abstract class BaseDocument<T, A extends Action> {
      * @param path - The file path where the state is stored.
      */
     async loadFromFile(path: string) {
-        this._document = await loadFromFile<T, A>(path, this._reducer);
+        this._document = await loadFromFile<T, A, M>(path, this._reducer);
     }
 
     /**
@@ -63,11 +63,11 @@ export abstract class BaseDocument<T, A extends Action> {
      * @param reducer - The reducer function that updates the state.
      * @returns The state of the document.
      */
-    protected static async stateFromFile<T, A extends Action>(
+    protected static async stateFromFile<T, A extends Action, M>(
         path: string,
-        reducer: Reducer<T, A>,
+        reducer: Reducer<T, A, M>,
     ) {
-        const state = await loadFromFile<T, A>(path, reducer);
+        const state = await loadFromFile<T, A, M>(path, reducer);
         return state;
     }
 
@@ -83,6 +83,13 @@ export abstract class BaseDocument<T, A extends Action> {
      */
     get operations() {
         return readOnly(this._document.operations);
+    }
+
+    /**
+     *    Gets the meta information of the document.
+     */
+    get meta() {
+        return readOnly(this._document.meta);
     }
 
     /**

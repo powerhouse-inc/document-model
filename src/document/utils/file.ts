@@ -16,7 +16,9 @@ import { fetchFile, getFile, hash, readFile, writeFile } from './node';
 
 export type FileInput = string | number[] | Uint8Array | ArrayBuffer | Blob;
 
-export const createZip = async (document: Document) => {
+export const createZip = async (
+    document: Document<unknown, Action, unknown>,
+) => {
     // create zip file
     const zip = new JSZip();
 
@@ -31,7 +33,7 @@ export const createZip = async (document: Document) => {
     zip.file('header.json', JSON.stringify(header, null, 2));
     zip.file(
         'state.json',
-        JSON.stringify(document.initialState || {}, null, 2)
+        JSON.stringify(document.initialState || {}, null, 2),
     );
     zip.file('operations.json', JSON.stringify(document.operations, null, 2));
 
@@ -60,10 +62,10 @@ export const createZip = async (document: Document) => {
  * @returns A promise that resolves to the path of the saved file.
  */
 export const saveToFile = async (
-    document: Document,
+    document: Document<unknown, Action, unknown>,
     path: string,
     extension: string,
-    name?: string
+    name?: string,
 ): Promise<string> => {
     // create zip file
     const zip = await createZip(document);
@@ -79,13 +81,13 @@ export const saveToFile = async (
         fileName.endsWith(fileExtension)
             ? fileName
             : `${fileName}${fileExtension}`,
-        file
+        file,
     );
 };
 
 export const saveToFileHandle = async (
     document: Document,
-    input: FileSystemFileHandle
+    input: FileSystemFileHandle,
 ) => {
     const zip = await createZip(document);
     const blob = await zip.generateAsync({ type: 'blob' });
@@ -109,26 +111,26 @@ export const saveToFileHandle = async (
  * @returns A promise that resolves to the document state after applying all the operations.
  * @throws An error if the initial state or the operations history is not found in the ZIP file.
  */
-export const loadFromFile = async <S, A extends Action>(
+export const loadFromFile = async <S, A extends Action, M>(
     path: string,
-    reducer: Reducer<S, A>
+    reducer: Reducer<S, A, M>,
 ) => {
     const file = readFile(path);
     return loadFromInput(file, reducer);
 };
 
-export const loadFromInput = async <S, A extends Action>(
+export const loadFromInput = async <S, A extends Action, M>(
     input: FileInput,
-    reducer: Reducer<S, A>
+    reducer: Reducer<S, A, M>,
 ) => {
     const zip = new JSZip();
     await zip.loadAsync(input);
     return loadFromZip(zip, reducer);
 };
 
-async function loadFromZip<S, A extends Action>(
+async function loadFromZip<S, A extends Action, M>(
     zip: JSZip,
-    reducer: Reducer<S, A>
+    reducer: Reducer<S, A, M>,
 ) {
     const initialStateZip = zip.file('state.json');
     if (!initialStateZip) {
@@ -148,22 +150,29 @@ async function loadFromZip<S, A extends Action>(
         throw new Error('Operations history not found');
     }
     const operations = JSON.parse(
-        await operationsZip.async('string')
+        await operationsZip.async('string'),
     ) as Operation<A | BaseAction>[];
 
-    const document: Document<S, A> = {
+    const metaZip = zip.file('meta.json');
+    let meta = {} as M;
+    if (metaZip) {
+        meta = JSON.parse(await metaZip.async('string'));
+    }
+
+    const document: Document<S, A, M> = {
         ...initialState,
         ...header,
         initialState,
         operations: [],
         attachments: { ...initialState.attachments },
+        meta,
     };
 
     let result = operations
         .slice(0, header?.revision)
         .reduce(
             (document, operation) => reducer(document, operation),
-            document
+            document,
         );
 
     if (header) {
@@ -180,7 +189,7 @@ async function loadFromZip<S, A extends Action>(
 }
 
 function getFileAttributes(
-    file: string
+    file: string,
 ): Omit<Attachment, 'data' | 'mimeType'> {
     const extension = file.replace(/^.*\./, '') || undefined;
     const fileName = file.replace(/^.*[/\\]/, '') || undefined;
@@ -193,9 +202,8 @@ function getFileAttributes(
  * @returns A Promise that resolves to an object containing the base64-encoded data and MIME type of the attachment.
  */
 export async function getRemoteFile(url: string): Promise<AttachmentInput> {
-    const { buffer, mimeType = 'application/octet-stream' } = await fetchFile(
-        url
-    );
+    const { buffer, mimeType = 'application/octet-stream' } =
+        await fetchFile(url);
     const attributes = getFileAttributes(url);
     const data = buffer.toString('base64');
     return {

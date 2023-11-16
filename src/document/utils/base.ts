@@ -72,10 +72,14 @@ export function createAction<A extends Action>(
  *
  * @returns The new reducer.
  */
-export function createReducer<S = unknown, A extends Action = Action>(
-    reducer: ImmutableStateReducer<S, A>,
+export function createReducer<
+    S = unknown,
+    A extends Action = Action,
+    M = unknown,
+>(
+    reducer: ImmutableStateReducer<S, A, M>,
     documentReducer = baseReducer,
-): Reducer<S, A> {
+): Reducer<S, A, M> {
     return (document, action) => {
         return documentReducer(document, action, reducer);
     };
@@ -110,10 +114,10 @@ export const createExtendedState = <S>(
  *
  * @returns The new document state.
  */
-export const createDocument = <S, A extends Action>(
+export const createDocument = <S, A extends Action, M = unknown>(
     initialState?: Partial<ExtendedState<Partial<S>>>,
     createState?: (state?: Partial<S>) => S,
-): Document<S, A> => {
+): Document<S, A, M> => {
     const state: ExtendedState<S> = createExtendedState(
         initialState,
         createState,
@@ -122,10 +126,11 @@ export const createDocument = <S, A extends Action>(
         ...state,
         initialState: state,
         operations: [],
+        meta: {} as M,
     };
 };
 
-export const hashDocument = (document: Document) => {
+export const hashDocument = (document: Document<unknown, Action, unknown>) => {
     return hash(JSONDeterministic(document.state));
 };
 
