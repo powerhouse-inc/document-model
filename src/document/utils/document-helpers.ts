@@ -191,7 +191,7 @@ export const reshuffleByTimestampAndIndex: Reshuffle = (
 };
 
 // TODO: implement better operation equality function
-export function operationsAreEqual(op1: Operation, op2: Operation) {
+export function operationsAreEqual<A extends OperationIndex>(op1: A, op2: A) {
     return stringify(op1) === stringify(op2);
 }
 
@@ -521,16 +521,17 @@ export function skipHeaderOperations<A extends OperationIndex>(
 ): A[] {
     const [lastOperation] = sortOperations(operations).slice(-1);
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const nextIndex = (lastOperation?.index ?? -1) + 1;
+    const lastIndex = lastOperation?.index ?? -1;
+    const nextIndex = lastIndex + 1;
 
     const skipOperationIndex = {
         ...skipHeaderOperation,
         index: skipHeaderOperation.index ?? nextIndex,
     };
 
-    if (skipOperationIndex.index < nextIndex) {
+    if (skipOperationIndex.index < lastIndex) {
         throw new Error(
-            `The skip header operation index must be greater than or equal to ${nextIndex}`,
+            `The skip header operation index must be greater than or equal to ${lastIndex}`,
         );
     }
 
@@ -560,4 +561,25 @@ export function grabageCollectDocumentOperations<A extends Action>(
     return {
         ...clearedOperations,
     };
+}
+
+/**
+ * Calculates the difference between two arrays of operations.
+ * Returns an array of operations that are present in `clearedOperationsA` but not in `clearedOperationsB`.
+ *
+ * @template A - The type of the operations.
+ * @param {A[]} clearedOperationsA - The first array of operations.
+ * @param {A[]} clearedOperationsB - The second array of operations.
+ * @returns {A[]} - The difference between the two arrays of operations.
+ */
+export function diffOperations<A extends OperationIndex>(
+    clearedOperationsA: A[],
+    clearedOperationsB: A[],
+): A[] {
+    return clearedOperationsA.filter(
+        operationA =>
+            !clearedOperationsB.some(
+                operationB => operationA.index === operationB.index,
+            ),
+    );
 }
