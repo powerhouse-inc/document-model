@@ -43,7 +43,6 @@ describe('UNDO/REDO', () => {
     });
 
     describe('processUndoRedo -> UNDO', () => {
-        // READY
         it('should return a NOOP action when an UNDO action is dispatched', () => {
             const skip = 0;
             const undoAction = undo();
@@ -57,7 +56,6 @@ describe('UNDO/REDO', () => {
             expect(result.action.type).toBe('NOOP');
         });
 
-        // READY
         it("should return skip = undo value if there's no skip value passed to the reducer", () => {
             const skip = 0;
             const undoAction = undo();
@@ -72,7 +70,6 @@ describe('UNDO/REDO', () => {
             expect(result.action.type).toBe('NOOP');
         });
 
-        // READY
         it('should return skip = undo value + previous NOOP skip value, when latest action is NOOP with skip > 0', () => {
             const skip = 0;
             const undoAction = undo();
@@ -93,7 +90,6 @@ describe('UNDO/REDO', () => {
             expect(result.action.type).toBe('NOOP');
         });
 
-        // READY
         it('should keep latest operation if is a NOOP with skip > 0', () => {
             const skip = 0;
             const undoAction = undo();
@@ -121,7 +117,6 @@ describe('UNDO/REDO', () => {
             expect(result.action.type).toBe('NOOP');
         });
 
-        // READY
         it('should NOT remove latest operation if !== NOOP', () => {
             const skip = 0;
             const undoAction = undo();
@@ -138,7 +133,6 @@ describe('UNDO/REDO', () => {
             expect(result.document.operations.global[4].type).toBe('INCREMENT');
         });
 
-        // READY
         it('should NOT remove latest operation if is a NOOP with skip = 0', () => {
             const skip = 0;
             const undoAction = undo();
@@ -160,7 +154,6 @@ describe('UNDO/REDO', () => {
             expect(result.document.operations.global[5].type).toBe('NOOP');
         });
 
-        // READY
         it('should add to the clipboard the undone operations', () => {
             const skip = 0;
 
@@ -207,7 +200,6 @@ describe('UNDO/REDO', () => {
             ]);
         });
 
-        // READY
         it('should not cosider previous undone operations when adding to the clipboard', () => {
             const skip = 0;
             const undoAction = undo();
@@ -234,7 +226,6 @@ describe('UNDO/REDO', () => {
             ]);
         });
 
-        // READY
         it('should continue undoing the latest valid operation if an UNDO action overlaps with a previous one', () => {
             const skip = 0;
             const undoAction = undo();
@@ -254,7 +245,7 @@ describe('UNDO/REDO', () => {
                 counterImmutableStateReducer,
             );
 
-            expect(result.skip).toBe(4);
+            expect(result.skip).toBe(5);
             expect(result.document.clipboard).toMatchObject([
                 {
                     type: 'INCREMENT',
@@ -268,7 +259,7 @@ describe('UNDO/REDO', () => {
                     input: undefined,
                     scope: 'global',
                     skip: 0,
-                    index: 3,
+                    index: 2,
                 },
             ]);
         });
@@ -434,7 +425,23 @@ describe('UNDO/REDO', () => {
     });
 
     describe('UNDO', () => {
-        // READY
+        it('should undo when there is only one operation', () => {
+            const initialState = createExtendedState<
+                CountState,
+                CountLocalState
+            >({
+                documentType: 'powerhouse/counter',
+                state: { global: { count: 0 }, local: {} },
+            });
+
+            document = createDocument<CountState, CountAction, CountLocalState>(
+                initialState,
+            );
+
+            document = countReducer(document, increment());
+            document = countReducer(document, undo());
+        });
+
         it('should add a NOOP when undo', () => {
             document = countReducer(document, undo());
 
@@ -446,7 +453,6 @@ describe('UNDO/REDO', () => {
             });
         });
 
-        // READY
         it('should undo operations', () => {
             document = countReducer(document, undo());
 
@@ -474,7 +480,6 @@ describe('UNDO/REDO', () => {
             });
         });
 
-        // READY
         it('should increase skip value of a previous undo Operation', () => {
             document = countReducer(document, undo());
             document = countReducer(document, undo());
@@ -518,7 +523,6 @@ describe('UNDO/REDO', () => {
             });
         });
 
-        // READY
         it('should undo the latest valid operation if undo overlaps with a previous undo operation', () => {
             document = countReducer(document, undo());
             document = countReducer(document, undo());
@@ -528,10 +532,9 @@ describe('UNDO/REDO', () => {
             document = countReducer(document, undo());
             document = countReducer(document, undo());
             document = countReducer(document, undo());
-            document = countReducer(document, undo());
 
-            expect(document.revision.global).toBe(9);
             expect(document.state.global.count).toBe(1);
+            expect(document.revision.global).toBe(9);
 
             expect(document.clipboard.length).toBe(3);
             expect(document.clipboard[0].type).toBe('INCREMENT');
@@ -541,33 +544,27 @@ describe('UNDO/REDO', () => {
             expect(document.clipboard[2].type).toBe('INCREMENT');
             expect(document.clipboard[2].index).toBe(1);
 
-            expect(document.operations.global.length).toBe(14);
+            expect(document.operations.global.length).toBe(13);
         });
 
-        // READY
         it('should undo the latest valid operation if undo overlaps with 2 previous undo operations', () => {
             document = countReducer(document, undo());
             document = countReducer(document, increment());
             document = countReducer(document, undo());
             document = countReducer(document, undo());
-            document = countReducer(document, undo());
             document = countReducer(document, increment());
-            document = countReducer(document, undo());
             document = countReducer(document, undo());
             document = countReducer(document, undo());
 
             expect(document.revision.global).toBe(10);
             expect(document.state.global.count).toBe(2);
-
-            expect(document.clipboard.length).toBe(3);
+            expect(document.clipboard.length).toBe(2);
             expect(document.clipboard[0].type).toBe('INCREMENT');
             expect(document.clipboard[0].index).toBe(8);
             expect(document.clipboard[1].type).toBe('INCREMENT');
-            expect(document.clipboard[1].index).toBe(3);
-            expect(document.clipboard[2].type).toBe('INCREMENT');
-            expect(document.clipboard[2].index).toBe(2);
+            expect(document.clipboard[1].index).toBe(2);
 
-            expect(document.operations.global.length).toBe(14);
+            expect(document.operations.global.length).toBe(12);
         });
     });
 
@@ -634,7 +631,6 @@ describe('UNDO/REDO', () => {
     });
 
     describe('NOOP operations', () => {
-        // READY
         it('should apply NOOP operations', () => {
             const op: Operation = {
                 input: undefined,
@@ -658,7 +654,6 @@ describe('UNDO/REDO', () => {
             });
         });
 
-        // READY
         it('should replace previous noop operation and update skip number when a new noop is dispatched after another one', () => {
             const baseOperation: Operation = {
                 input: undefined,
@@ -688,7 +683,6 @@ describe('UNDO/REDO', () => {
             });
         });
 
-        // READY
         it('NOOP operation should not add skipped operation to the clipboard', () => {
             const op: Operation = {
                 input: undefined,
@@ -707,7 +701,6 @@ describe('UNDO/REDO', () => {
             expect(document.clipboard.length).toBe(0);
         });
 
-        // READY
         it('should process NOOP with skip value', () => {
             document = countReducer(document, noop(), undefined, {
                 skip: 2,

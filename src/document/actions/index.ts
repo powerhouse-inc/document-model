@@ -70,19 +70,31 @@ export function undoOperation<T, A extends Action, L>(
 
     return produce(defaultResult, draft => {
         const operations = [...document.operations[scope]];
-
         const sortedOperations = documentHelpers.sortOperations(operations);
 
-        draft.skip = documentHelpers.nextSkipNumber(sortedOperations);
         draft.action = noop(scope);
 
         const lastOperation = sortedOperations.at(-1);
         let nextIndex = lastOperation?.index ?? -1;
 
-        if (lastOperation?.type !== 'NOOP') {
+        const isNewNoop = lastOperation?.type !== 'NOOP';
+
+        if (isNewNoop) {
             nextIndex = nextIndex + 1;
         } else {
             draft.reuseLastOperationIndex = true;
+        }
+
+        const nextOperationHistory = isNewNoop
+            ? [...sortedOperations, { index: nextIndex, skip: 0 }]
+            : sortedOperations;
+
+        draft.skip = documentHelpers.nextSkipNumber(nextOperationHistory);
+
+        if (lastOperation && draft.skip > lastOperation.skip + 1) {
+            // there's an overlap with a previous skip operation
+            // (add 1 to the skip value because we are adding a new operation to the history)
+            draft.skip = draft.skip + 1;
         }
 
         // TODO: throw error if nextSkipNumber is < 0
