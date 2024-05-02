@@ -306,6 +306,10 @@ export function baseReducer<T, A extends Action, L>(
         (skipValue > 0 || ('index' in _action && _action.skip > 0));
 
     if (shouldProcessSkipOperation) {
+        if ('skip' in _action && _action.skip > 0) {
+            skipValue = _action.skip;
+        }
+
         newDocument = processSkipOperation(
             newDocument,
             _action,
