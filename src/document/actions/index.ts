@@ -97,8 +97,11 @@ export function undoOperation<T, A extends Action, L>(
             draft.skip = draft.skip + 1;
         }
 
-        // TODO: throw error if nextSkipNumber is < 0
-        // TODO: throw an error if there's no operations to undo
+        if (draft.skip < 0) {
+            throw new Error(
+                `Cannot undo: you can't undo more operations than the ones in the scope history`,
+            );
+        }
 
         const clearedOperations = documentHelpers.skipHeaderOperations(
             operations,

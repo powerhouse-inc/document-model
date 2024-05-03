@@ -349,7 +349,7 @@ export type ReplayDocumentOptions = {
 // This rebuilds the document according to the provided actions.
 export function replayDocument<T, A extends Action, L>(
     initialState: ExtendedState<T, L>,
-    operations: DocumentOperations<A>,
+    clearedOperations: DocumentOperations<A>,
     reducer: Reducer<T, A, L>,
     dispatch?: SignalDispatch,
     header?: DocumentHeader,
@@ -361,7 +361,7 @@ export function replayDocument<T, A extends Action, L>(
     // builds a new document from the initial data
     const document = createDocument<T, A, L>(initialState);
 
-    const flatOperations = Object.values(operations).flat();
+    const flatOperations = Object.values(clearedOperations).flat();
 
     const result = flatOperations.reduce((document, operation) => {
         const doc = reducer(document, operation, dispatch, {
@@ -405,7 +405,7 @@ export function replayDocument<T, A extends Action, L>(
                         return {
                             ...operation,
                             timestamp:
-                                operations[scope][index]?.timestamp ??
+                                clearedOperations[scope][index]?.timestamp ??
                                 operation.timestamp,
                         };
                     }),

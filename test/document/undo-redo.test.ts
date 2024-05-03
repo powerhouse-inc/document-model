@@ -264,29 +264,19 @@ describe('UNDO/REDO', () => {
             ]);
         });
 
-        it.skip('should throw an error if an undo actions is dispatched along with an skip value from the reducer', () => {
-            const skip = 1;
-            const undoAction = undo(1);
-            const throwErrorFunc = () =>
-                processUndoRedo(
-                    document,
-                    undoAction,
-                    skip,
-                    counterImmutableStateReducer,
-                );
-
-            expect(throwErrorFunc).toThrow(
-                'Cannot undo: skip value from reducer cannot be used with UNDO action',
-            );
-        });
-
-        it.skip('should throw an error if you try to undone more operations than the ones available', () => {
+        it('should throw an error if you try to undone more operations than the ones available', () => {
             const skip = 0;
-            const undoAction = undo(10);
+
+            document = countReducer(document, undo());
+            document = countReducer(document, undo());
+            document = countReducer(document, undo());
+            document = countReducer(document, undo());
+            document = countReducer(document, undo());
+
             const throwErrorFunc = () =>
                 processUndoRedo(
                     document,
-                    undoAction,
+                    undo(),
                     skip,
                     counterImmutableStateReducer,
                 );
@@ -296,25 +286,9 @@ describe('UNDO/REDO', () => {
             );
         });
 
-        it.skip('should throw an error if you dispatch an undo action with a negative value', () => {
+        it('should throw an error if you dispatch an undo action in a document with no operations in the scope history', () => {
             const skip = 0;
-            const undoAction = undo(-1);
-            const throwErrorFunc = () =>
-                processUndoRedo(
-                    document,
-                    undoAction,
-                    skip,
-                    counterImmutableStateReducer,
-                );
-
-            expect(throwErrorFunc).toThrow(
-                'Invalid UNDO action: input value must be greater than 0',
-            );
-        });
-
-        it.skip('should throw an error if you dispatch an undo action in a document with no operations in the scope history', () => {
-            const skip = 0;
-            const undoAction = undo(1);
+            const undoAction = undo();
             const emptyDocument = createDocument<
                 CountState,
                 CountAction,
@@ -335,7 +309,7 @@ describe('UNDO/REDO', () => {
                 );
 
             expect(throwErrorFunc).toThrow(
-                'Cannot undo: no operations in history for scope "global"',
+                "Cannot undo: you can't undo more operations than the ones in the scope history",
             );
         });
     });
