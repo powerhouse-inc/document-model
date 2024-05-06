@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import {
     reducer,
     DocumentModel,
@@ -7,7 +8,7 @@ import {
     utils as documentModelUtils,
 } from '../../src/document-model';
 import { utils } from '../../src/document';
-import { createDocument } from '../../src/document/utils';
+import { createDocument, documentHelpers } from '../../src/document/utils';
 import {
     setAuthorName,
     setAuthorWebsite,
@@ -412,7 +413,7 @@ describe('DocumentModel Class', () => {
     });
 
     describe('state replayOperations', () => {
-        it.skip('skipped operations should be ignored when re-calculate document state', () => {
+        it('skipped operations should be ignored when re-calculate document state', () => {
             const initialState = documentModelUtils.createExtendedState();
             const document = createDocument<
                 DocumentModelState,
@@ -432,7 +433,7 @@ describe('DocumentModel Class', () => {
                 newDocument,
                 setModelExtension({ extension: 'phdm' }),
                 undefined,
-                { skip: 2, ignoreSkipOperations: true },
+                { skip: 2, ignoreSkipOperations: false },
             );
             newDocument = reducer(
                 newDocument,
@@ -442,18 +443,23 @@ describe('DocumentModel Class', () => {
                 newDocument,
                 setAuthorWebsite({ authorWebsite: '<authorWebsite>' }),
                 undefined,
-                { skip: 1, ignoreSkipOperations: true },
+                { skip: 1, ignoreSkipOperations: false },
             );
             newDocument = reducer(newDocument, setModelId({ id: '<id>' }));
 
+            const clearedOperations =
+                documentHelpers.grabageCollectDocumentOperations(
+                    newDocument.operations,
+                );
+
             const replayedDoc = utils.replayOperations(
                 initialState,
-                newDocument.operations,
+                clearedOperations,
                 stateReducer,
             );
 
             expect(replayedDoc.revision.global).toBe(6);
-            expect(replayedDoc.operations.global.length).toBe(6);
+            expect(replayedDoc.operations.global.length).toBe(3);
             expect(replayedDoc.state.global).toMatchObject({
                 id: '<id>',
                 name: '',

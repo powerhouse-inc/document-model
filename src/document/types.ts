@@ -350,6 +350,7 @@ export type UndoRedoProcessResult<T, A extends Action, L> = {
     document: Document<T, A, L>;
     action: A | BaseAction;
     skip: number;
+    reuseLastOperationIndex: boolean;
 };
 
 export type ValidationError = { message: string; details: object };

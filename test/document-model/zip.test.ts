@@ -1,6 +1,8 @@
+import { describe, it, expect, afterAll, beforeAll } from 'vitest';
 import fs from 'fs';
 import { actions, reducer, utils } from '../../src/document-model';
 import { actions as baseActions } from '../../src/document';
+import { documentHelpers } from '../../src/document/utils';
 
 describe('DocumentModel Class', () => {
     const tempDir = './test/document/temp/document-model/zip';
@@ -48,7 +50,7 @@ describe('DocumentModel Class', () => {
         ]);
     });
 
-    it.skip('should keep undo state when loading from zip', async () => {
+    it('should keep undo state when loading from zip', async () => {
         let documentModel = utils.createDocument();
         documentModel = reducer(
             documentModel,
@@ -65,13 +67,6 @@ describe('DocumentModel Class', () => {
         expect(loadedDocumentModel.state.global.id).toBe('');
         expect(loadedDocumentModel.operations.global).toMatchObject([
             {
-                index: 0,
-                skip: 0,
-                input: {},
-                scope: 'global',
-                type: 'NOOP',
-            },
-            {
                 index: 1,
                 skip: 1,
                 input: {},
@@ -80,7 +75,12 @@ describe('DocumentModel Class', () => {
             },
         ]);
 
-        const expectedLoadedDocumentModel = { ...documentModel };
+        const expectedLoadedDocumentModel = {
+            ...documentModel,
+            operations: documentHelpers.grabageCollectDocumentOperations(
+                documentModel.operations,
+            ),
+        };
         expectedLoadedDocumentModel.clipboard = [];
         expect(loadedDocumentModel).toStrictEqual(expectedLoadedDocumentModel);
     });

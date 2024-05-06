@@ -601,52 +601,6 @@ describe('skip operations', () => {
             ]);
         });
 
-        // TODO: handle skip head operations in replayOperations
-        it.skip('should skip the latest 2 operations from global scope ops when skipHeaderOperations is defined', () => {
-            const initialState = createExtendedState<
-                CountState,
-                CountLocalState
-            >({
-                documentType: 'powerhouse/counter',
-                state: { global: { count: 0 }, local: {} },
-            });
-
-            let document = createDocument<
-                CountState,
-                CountAction,
-                CountLocalState
-            >(initialState);
-
-            document = countReducer(document, increment());
-            document = countReducer(document, increment());
-            document = countReducer(document, increment());
-            document = countReducer(document, increment());
-            document = countReducer(document, increment());
-
-            const replayedDoc = utils.replayOperations(
-                initialState,
-                document.operations,
-                baseCountReducer,
-                undefined,
-                undefined,
-                undefined,
-                { global: 2 },
-            );
-
-            expect(replayedDoc.state.global.count).toBe(3);
-
-            expect(replayedDoc.revision.global).toBe(5);
-            expect(replayedDoc.operations.global.length).toBe(5);
-            expect(replayedDoc.operations.global[3]).toHaveProperty(
-                'type',
-                'NOOP',
-            );
-            expect(replayedDoc.operations.global[4]).toHaveProperty(
-                'type',
-                'NOOP',
-            );
-        });
-
         it('should skip operations when dispatch a new action with an skip value', () => {
             const initialState = createExtendedState<
                 CountState,
