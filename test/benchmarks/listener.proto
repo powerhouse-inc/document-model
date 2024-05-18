@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+message CallInfo {
+    string data = 1;
+    string name = 2;
+    string transmitterType = 3;
+}
+
+message Filter {
+    repeated string branch = 1;
+    repeated string documentId = 2;
+    repeated string documentType = 3;
+    repeated string scope = 4;
+}
+
+message Listener {
+  CallInfo callInfo = 1;
+  bool system = 2;
+  string listenerId = 3;
+  Filter filter = 4;
+  bool block = 5;
+  string label = 6;
+}
+
+message Operation {
+    Listener listener = 1;
+}
