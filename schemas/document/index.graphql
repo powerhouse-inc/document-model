@@ -20,6 +20,7 @@ interface IOperation {
     index: Int!
     timestamp: DateTime!
     hash: String!
+    resultingState: String
 }
 
 type Operation implements IOperation {
@@ -27,6 +28,7 @@ type Operation implements IOperation {
     index: Int!
     timestamp: DateTime!
     hash: String!
+    resultingState: String
 }
 
 type DocumentFile {

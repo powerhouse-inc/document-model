@@ -277,16 +277,23 @@ export function baseReducer<T, A extends Action, L>(
             );
         }
 
-        newDocument = replayOperations(
-            newDocument.initialState,
-            newDocument.operations,
-            customReducer,
-            undefined,
-            undefined,
-            undefined,
-            { [_action.scope]: skipsLeft },
-            // TODO reuse hash?
-        );
+        //TODO: Instead of replaying document use resultingState of the last valid operation 
+        const lastValidOpIndex = (document.operations[action.scope].length - 1) - skipsLeft
+        const op = document.operations[action.scope][lastValidOpIndex];
+        if (op && op.resultingState) {
+            newDocument = JSON.parse(op.resultingState) as Document<T, A, L>
+        } else {
+            newDocument = replayOperations(
+                newDocument.initialState,
+                newDocument.operations,
+                customReducer,
+                undefined,
+                undefined,
+                undefined,
+                { [_action.scope]: skipsLeft },
+                // TODO reuse hash?
+            );
+        }
     }
 
     // updates the document revision number, last modified date

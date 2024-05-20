@@ -132,6 +132,8 @@ export type Operation<A extends Action = Action> = A & {
     skip: number;
     /** Error message for a failed action */
     error?: string;
+    /** Resulting state of that operation */
+    resultingState?: string;
 };
 
 /**
