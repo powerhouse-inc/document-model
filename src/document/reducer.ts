@@ -91,6 +91,7 @@ function updateOperations<T extends Document>(
     document: T,
     action: Action | Operation,
     skip = 0,
+    storeOperationResultingState = false,
 ): T {
     // UNDO, REDO and PRUNE are meta operations
     // that alter the operations history themselves
@@ -115,7 +116,7 @@ function updateOperations<T extends Document>(
     }
 
     // adds the operation to its scope operations
-    operations.push({
+    const operation: Operation = {
         ...action,
         index: nextIndex,
         timestamp: new Date().toISOString(),
@@ -123,7 +124,13 @@ function updateOperations<T extends Document>(
         scope,
         skip,
         error: undefined,
-    });
+    };
+
+    if (storeOperationResultingState) {
+        operation.resultingState = document.state[scope];
+    }
+
+    operations.push(operation);
 
     // adds the action to the operations history with
     // the latest index and current timestamp
@@ -144,8 +151,14 @@ function updateDocument<T extends Document>(
     document: T,
     action: Action,
     skip = 0,
+    storeOperationResultingState = false,
 ) {
-    let newDocument = updateOperations(document, action, skip);
+    let newDocument = updateOperations(
+        document,
+        action,
+        skip,
+        storeOperationResultingState,
+    );
     newDocument = updateHeader(newDocument, action);
     return newDocument;
 }
@@ -350,7 +363,12 @@ export function baseReducer<T, A extends Action, L>(
 
     // updates the document revision number, last modified date
     // and operation history
-    newDocument = updateDocument(newDocument, _action, skipValue);
+    newDocument = updateDocument(
+        newDocument,
+        _action,
+        skipValue,
+        reuseOperationResultingState,
+    );
 
     if (shouldProcessSkipOperation) {
         newDocument = processSkipOperation(
