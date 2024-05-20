@@ -1,3 +1,10 @@
+# [1.1.0-experimental.3](https://github.com/powerhouse-inc/document-model/compare/v1.1.0-experimental.2...v1.1.0-experimental.3) (2024-05-20)
+
+
+### Features
+
+* store operation resulting state ([b11ebbe](https://github.com/powerhouse-inc/document-model/commit/b11ebbe9bba68346dda2df526f9b18dee0e2016f))
+
 # [1.1.0-experimental.2](https://github.com/powerhouse-inc/document-model/compare/v1.1.0-experimental.1...v1.1.0-experimental.2) (2024-05-20)
 
 
