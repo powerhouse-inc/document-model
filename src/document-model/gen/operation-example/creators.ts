@@ -1,4 +1,4 @@
-import { createAction } from '../../../document/utils';
+import { createAction } from '../../../document/utils/base';
 
 import {
     AddOperationExampleInput,
@@ -14,27 +14,23 @@ import {
 } from './actions';
 
 export const addOperationExample = (input: AddOperationExampleInput) =>
-    createAction<AddOperationExampleAction>(
-        'ADD_OPERATION_EXAMPLE',
-        {...input},
-    );
+    createAction<AddOperationExampleAction>('ADD_OPERATION_EXAMPLE', {
+        ...input,
+    });
 
 export const updateOperationExample = (input: UpdateOperationExampleInput) =>
-    createAction<UpdateOperationExampleAction>(
-        'UPDATE_OPERATION_EXAMPLE',
-        {...input},
-    );
+    createAction<UpdateOperationExampleAction>('UPDATE_OPERATION_EXAMPLE', {
+        ...input,
+    });
 
 export const deleteOperationExample = (input: DeleteOperationExampleInput) =>
-    createAction<DeleteOperationExampleAction>(
-        'DELETE_OPERATION_EXAMPLE',
-        {...input},
-    );
+    createAction<DeleteOperationExampleAction>('DELETE_OPERATION_EXAMPLE', {
+        ...input,
+    });
 
-export const reorderOperationExamples = (input: ReorderOperationExamplesInput) =>
-    createAction<ReorderOperationExamplesAction>(
-        'REORDER_OPERATION_EXAMPLES',
-        {...input},
-    );
-
-
+export const reorderOperationExamples = (
+    input: ReorderOperationExamplesInput,
+) =>
+    createAction<ReorderOperationExamplesAction>('REORDER_OPERATION_EXAMPLES', {
+        ...input,
+    });
