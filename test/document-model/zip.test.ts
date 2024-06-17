@@ -3,7 +3,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { actions, reducer, utils } from '../../src/document-model';
 import { actions as baseActions } from '../../src/document';
 
-describe('DocumentModel Class', () => {
+const isBrowser = typeof window !== 'undefined';
+
+describe.skipIf(isBrowser)('DocumentModel Class', () => {
     const tempDir = './test/document/temp/document-model/zip';
     let timestamp = '';
     beforeAll(() => {
@@ -24,7 +26,10 @@ describe('DocumentModel Class', () => {
             actions.setModelId({ id: 'powerhouse/test' }),
         );
         await utils.saveToFile(documentModel, tempDir, 'test');
-        expect(fs.existsSync(`${tempDir}/test.phdm.zip`)).toBe(true);
+
+        if (process.env.VITE_TARGET === 'browser') {
+            expect(fs.existsSync(`${tempDir}/test.phdm.zip`)).toBe(true);
+        }
 
         // keeps operation timestamp to check when loading
         timestamp = documentModel.operations.global[0].timestamp;

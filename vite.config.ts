@@ -2,12 +2,20 @@ import { Plugin, defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import generateFile from 'vite-plugin-generate-file';
 
-function replaceBrowserModules(): Plugin {
+export function replaceBrowserModules(): Plugin {
     return {
         name: 'replace-browser-modules',
-        resolveId(source) {
+        async resolveId(source, importer, options) {
             if (source.endsWith('/node')) {
-                return 'src/document/utils/browser.ts';
+                const resolvedId = await this.resolve(
+                    source,
+                    importer,
+                    options,
+                );
+                return {
+                    ...resolvedId,
+                    id: resolvedId!.id.replace('node.ts', 'browser.ts'),
+                };
             }
         },
         enforce: 'pre',
@@ -20,8 +28,10 @@ const entry = {
     document: 'src/document/index.ts',
 };
 
-export default defineConfig(({ mode = 'node' }) => {
-    const isBrowser = mode === 'browser';
+// eslint-disable-next-line no-empty-pattern
+export default defineConfig(({ mode }) => {
+    const target = process.env.VITE_TARGET ?? 'node';
+    const isBrowser = target === 'browser';
     const external = ['mutative', 'jszip', 'mime', 'zod'];
 
     // if building for node then don't polyfill node core modules
@@ -31,7 +41,7 @@ export default defineConfig(({ mode = 'node' }) => {
 
     return {
         build: {
-            outDir: `dist/${mode}`,
+            outDir: `dist/${target}`,
             emptyOutDir: true,
             lib: {
                 entry,
@@ -46,7 +56,7 @@ export default defineConfig(({ mode = 'node' }) => {
                 },
             },
             sourcemap: true,
-            minify: false,
+            minify: mode === 'production',
         },
         optimizeDeps: {
             include: isBrowser ? ['sha.js/sha1', 'sha.js/sha256'] : [],

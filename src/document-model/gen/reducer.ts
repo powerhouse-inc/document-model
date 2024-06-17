@@ -9,7 +9,7 @@ import { reducer as OperationErrorReducer } from '../custom/reducers/operation-e
 import { reducer as OperationExampleReducer } from '../custom/reducers/operation-example';
 import { reducer as OperationReducer } from '../custom/reducers/operation';
 import { reducer as StateReducer } from '../custom/reducers/state';
-import { createReducer, isBaseAction } from '../../document/utils';
+import { createReducer, isBaseAction } from '../../document/utils/base';
 
 export const stateReducer: ImmutableStateReducer<
     DocumentModelState,
