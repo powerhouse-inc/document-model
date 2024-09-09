@@ -1,6 +1,7 @@
 import type { Buffer } from 'buffer';
 import Sha1 from 'sha.js/sha1';
 import Sha256 from 'sha.js/sha256';
+import { createHash as createSha1Hash } from 'sha1-uint8array';
 
 const FileSystemError = new Error('File system not available.');
 
@@ -45,4 +46,30 @@ export const hash = (
     const sha = new Algorithm();
 
     return sha.update(data).digest('base64');
+};
+
+function uint8ArrayToBase64(uint8Array) {
+    // Convert the Uint8Array to a binary string
+    let binaryString = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+        binaryString += String.fromCharCode(uint8Array[i]);
+    }
+
+    // Encode the binary string to base64
+    const base64String = btoa(binaryString);
+    return base64String;
+}
+
+export const hashUIntArray = (
+    data: string | Uint8Array | ArrayBufferView,
+    algorithm = 'sha1',
+) => {
+    if (!['sha1'].includes(algorithm)) {
+        throw new Error('Hashing algorithm not supported: Available: sha1');
+    }
+    return uint8ArrayToBase64(
+        createSha1Hash('sha1')
+            .update(data as string)
+            .digest(),
+    );
 };

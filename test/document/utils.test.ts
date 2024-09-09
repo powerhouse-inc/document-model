@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, bench } from 'vitest';
 import {
     createDocument,
     createReducer,
@@ -8,7 +8,10 @@ import {
     replayDocument,
     validateOperations,
 } from '../../src/document/utils';
-import { hash as hashBrowser } from '../../src/document/utils/browser';
+import {
+    hash as hashBrowser,
+    hashUIntArray,
+} from '../../src/document/utils/browser';
 import { hash as hashNode } from '../../src/document/utils/node';
 import {
     baseCountReducer,
@@ -54,6 +57,7 @@ describe('Base utils', () => {
 
     it('should hash in browser and node', () => {
         expect(hashNode('test')).toEqual(hashBrowser('test'));
+        expect(hashUIntArray('test')).toEqual(hashNode('test'));
     });
 
     it('should find invalid index oprations', () => {
